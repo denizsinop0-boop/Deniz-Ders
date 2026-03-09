@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.denizsinop0_boop.twa",
+      "sha256_cert_fingerprints": [
+        "16:48:6E:CC:19:46:6A:F8:98:77:76:88:C1:C5:FE:E2:2F:E3:3C:7C:5C:18:AE:71:62:99:E5:4E:83:AD:86:10"
+      ]
+    }
+  }
+]
