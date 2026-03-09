@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Alışkanlık">
+<meta name="theme-color" content="#e8c547">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.svg">
+<title>Akademik Alışkanlıklar</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0d0d0f; --surface:#141418; --card:#1a1a20; --border:#2a2a35;
+    --accent:#e8c547; --accent2:#7c6dfa; --text:#e8e8f0; --muted:#6b6b80;
+    --success:#4ade80; --danger:#f87171;
+    --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{height:100%;}
+  body{
+    background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;
+    padding:calc(0.8rem + var(--safe-top)) 1rem calc(1.5rem + var(--safe-bottom));
+    background-image:radial-gradient(ellipse at 20% 10%,rgba(124,109,250,.07) 0%,transparent 60%),
+                     radial-gradient(ellipse at 80% 80%,rgba(232,197,71,.05) 0%,transparent 50%);
+    overscroll-behavior:none;
+  }
+
+  header{text-align:center;margin-bottom:1rem;animation:fadeDown .7s ease both;}
+  .eyebrow{font-size:.65rem;letter-spacing:.3em;color:var(--accent);text-transform:uppercase;margin-bottom:.4rem;}
+  header h1{
+    font-family:'Playfair Display',serif;font-size:clamp(1.4rem,6vw,2.2rem);font-weight:900;line-height:1.1;
+    background:linear-gradient(135deg,#e8e8f0 30%,var(--accent) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  }
+  header p{color:var(--muted);font-size:.72rem;margin-top:.5rem;}
+
+  .date-bar{
+    display:flex;justify-content:center;align-items:center;gap:.8rem;
+    margin-bottom:1.5rem;font-size:.68rem;color:var(--muted);letter-spacing:.1em;
+    animation:fadeDown .7s .1s ease both;
+  }
+  .date-bar span{color:var(--accent2);}
+
+  .progress-banner{
+    background:var(--card);border:1px solid var(--border);border-radius:16px;
+    padding:1rem 1.4rem;display:flex;align-items:center;gap:1.2rem;
+    margin-bottom:1.5rem;animation:fadeDown .7s .15s ease both;
+  }
+  .progress-circle{width:60px;height:60px;flex-shrink:0;position:relative;}
+  .progress-circle svg{transform:rotate(-90deg);}
+  .progress-circle .track{fill:none;stroke:var(--border);stroke-width:5;}
+  .progress-circle .fill{
+    fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;
+    stroke-dasharray:163;stroke-dashoffset:163;transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1);
+  }
+  .progress-circle .pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:500;color:var(--accent);}
+  .progress-text{flex:1;min-width:0;}
+  .progress-text h3{font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:.15rem;}
+  .progress-text p{font-size:.68rem;color:var(--muted);}
+  .streak-badge{background:linear-gradient(135deg,var(--accent2),#a78bfa);border-radius:10px;padding:.5rem .9rem;text-align:center;flex-shrink:0;}
+  .streak-badge .num{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:white;line-height:1;}
+  .streak-badge .label{font-size:.55rem;color:rgba(255,255,255,.75);letter-spacing:.1em;text-transform:uppercase;}
+
+  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem;}
+  .section-title{font-size:.62rem;letter-spacing:.25em;text-transform:uppercase;color:var(--muted);}
+  .edit-btn{
+    font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent2);
+    background:none;border:1px solid rgba(124,109,250,.3);border-radius:6px;
+    padding:.28rem .55rem;cursor:pointer;font-family:'DM Mono',monospace;transition:all .2s;
+  }
+  .edit-btn.on{background:rgba(124,109,250,.15);color:var(--accent);border-color:var(--accent);}
+
+  .habits-grid{display:grid;grid-template-columns:1fr;gap:.65rem;margin-bottom:1rem;}
+
+  .habit-card{
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:.9rem 1rem;display:flex;align-items:center;gap:.9rem;
+    cursor:pointer;transition:border-color .2s,background .2s;
+    animation:fadeUp .5s ease both;user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  }
+  .habit-card:active{transform:scale(.98);}
+  .habit-card.done{border-color:var(--success);background:rgba(74,222,128,.04);}
+  .habit-card.done .habit-name{text-decoration:line-through;color:var(--muted);}
+  .habit-card.editing{cursor:default;border-color:rgba(124,109,250,.5);background:rgba(124,109,250,.04);}
+  .habit-card.editing:active{transform:none;}
+
+  .habit-icon{
+    width:40px;height:40px;border-radius:10px;background:var(--surface);
+    border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+    font-size:1.15rem;flex-shrink:0;transition:all .2s;
+  }
+  .habit-card.editing .habit-icon{cursor:pointer;border-style:dashed;border-color:var(--accent2);}
+  .habit-card.editing .habit-icon:hover{background:rgba(124,109,250,.15);}
+  .habit-card.done .habit-icon{background:rgba(74,222,128,.12);border-color:var(--success);}
+
+  .habit-info{flex:1;min-width:0;}
+  .habit-name{font-size:.82rem;font-weight:500;margin-bottom:.15rem;transition:color .2s;}
+  .habit-desc{font-size:.65rem;color:var(--muted);white-space:normal;overflow:visible;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .habit-science{font-size:.58rem;color:var(--accent2);margin-top:.2rem;white-space:normal;overflow:hidden;opacity:.8;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+
+  .habit-field{
+    display:block;width:100%;background:rgba(255,255,255,.05);
+    border:1px solid rgba(124,109,250,.4);border-radius:6px;color:var(--text);
+    font-family:'DM Mono',monospace;padding:.25rem .4rem;outline:none;transition:border-color .2s;
+    margin-bottom:.25rem;
+  }
+  .habit-field:focus{border-color:var(--accent);}
+  .habit-field.name-f{font-size:.82rem;font-weight:500;}
+  .habit-field.desc-f{font-size:.65rem;color:var(--muted);}
+
+  .del-btn{
+    width:28px;height:28px;border-radius:8px;border:1px solid rgba(248,113,113,.3);
+    background:rgba(248,113,113,.08);color:var(--danger);font-size:1rem;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;
+  }
+  .del-btn:hover{background:rgba(248,113,113,.2);}
+
+  .habit-check{
+    width:26px;height:26px;border-radius:8px;border:2px solid var(--border);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:all .2s;font-size:.9rem;font-weight:bold;
+  }
+  .habit-card.done .habit-check{background:var(--success);border-color:var(--success);color:#0d0d0f;}
+
+  .add-habit-btn{
+    display:none;align-items:center;justify-content:center;gap:.5rem;
+    width:100%;padding:.85rem;background:transparent;
+    border:1px dashed rgba(124,109,250,.4);border-radius:14px;
+    color:var(--accent2);font-family:'DM Mono',monospace;font-size:.72rem;
+    letter-spacing:.08em;cursor:pointer;transition:all .2s;margin-bottom:1.5rem;
+  }
+  .add-habit-btn:hover{background:rgba(124,109,250,.08);border-color:var(--accent2);}
+
+  .tip-box{
+    background:linear-gradient(135deg,rgba(124,109,250,.1),rgba(232,197,71,.06));
+    border:1px solid rgba(124,109,250,.25);border-radius:14px;
+    padding:1rem 1.2rem;margin-bottom:1.5rem;animation:fadeUp .5s .3s ease both;
+  }
+  .tip-label{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent2);margin-bottom:.4rem;}
+  .tip-box p{font-size:.75rem;line-height:1.7;}
+
+  .quote-card{
+    background:var(--card);border-left:3px solid var(--accent);
+    border-radius:0 12px 12px 0;padding:1rem 1.2rem;margin-bottom:1.5rem;
+    animation:fadeUp .5s .4s ease both;
+  }
+  .quote-card p{font-family:'Playfair Display',serif;font-size:.95rem;font-style:italic;line-height:1.6;margin-bottom:.3rem;}
+  .quote-card span{font-size:.65rem;color:var(--muted);}
+
+  .weekly-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.35rem;margin-bottom:1.5rem;animation:fadeUp .5s .5s ease both;}
+  .week-day{
+    aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;font-size:.55rem;gap:.2rem;
+    background:var(--card);border:1px solid var(--border);
+  }
+  .week-day .wlabel{color:var(--muted);}
+  .week-day .wdot{width:7px;height:7px;border-radius:3px;background:var(--border);}
+  .week-day.active{border-color:var(--accent);}
+  .week-day.active .wdot{background:var(--accent);}
+  .week-day.past .wdot{background:var(--accent2);opacity:.5;}
+
+  .reset-btn{
+    display:block;width:100%;padding:1rem;background:transparent;border:1px solid var(--border);
+    border-radius:12px;color:var(--muted);font-family:'DM Mono',monospace;
+    font-size:.7rem;letter-spacing:.1em;cursor:pointer;transition:all .2s;
+    text-transform:uppercase;margin-bottom:2rem;
+  }
+  .reset-btn:active{border-color:var(--muted);color:var(--text);}
+
+  /* Modal */
+  .modal-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);
+    z-index:100;align-items:center;justify-content:center;padding:1.5rem;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:var(--card);border:1px solid var(--border);border-radius:18px;
+    padding:1.5rem;width:100%;max-width:340px;animation:fadeUp .3s ease both;
+  }
+  .modal h3{font-family:'Playfair Display',serif;font-size:1.1rem;margin-bottom:1rem;}
+  .modal label{font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:.3rem;}
+  .modal input{
+    width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;
+    color:var(--text);font-family:'DM Mono',monospace;font-size:.85rem;
+    padding:.6rem .8rem;outline:none;margin-bottom:1rem;transition:border-color .2s;
+  }
+  .modal input:focus{border-color:var(--accent2);}
+  .emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:.35rem;margin-bottom:1rem;max-height:140px;overflow-y:auto;}
+  .emoji-opt{
+    aspect-ratio:1;border-radius:8px;border:1px solid var(--border);background:var(--surface);
+    display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+    cursor:pointer;transition:all .2s;
+  }
+  .emoji-opt.sel{border-color:var(--accent);background:rgba(232,197,71,.12);}
+  .modal-btns{display:flex;gap:.6rem;}
+  .btn-primary{
+    flex:1;padding:.8rem;background:var(--accent);border:none;border-radius:10px;
+    color:#0d0d0f;font-family:'DM Mono',monospace;font-size:.75rem;font-weight:500;
+    letter-spacing:.05em;cursor:pointer;transition:opacity .2s;
+  }
+  .btn-primary:hover{opacity:.85;}
+  .btn-secondary{
+    flex:1;padding:.8rem;background:transparent;border:1px solid var(--border);border-radius:10px;
+    color:var(--muted);font-family:'DM Mono',monospace;font-size:.75rem;cursor:pointer;transition:all .2s;
+  }
+  .btn-secondary:hover{border-color:var(--muted);color:var(--text);}
+
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:999;display:flex;align-items:center;justify-content:center;font-size:5rem;opacity:0;}
+  .confetti.show{animation:popIn 1.6s ease both;}
+  @keyframes popIn{0%{opacity:0;transform:scale(.4)}20%{opacity:1;transform:scale(1.3)}80%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<div class="confetti" id="confetti">🎉</div>
+
+<header>
+  <div class="eyebrow">Günlük Rutin</div>
+  <h1>Akademik<br>Alışkanlıklar</h1>
+  <p>Bilim destekli rutinler · ~5-6 saat akademik çalışma</p>
+</header>
+
+<div class="date-bar"><span id="dateStr">—</span> · Bugün</div>
+
+<div class="progress-banner">
+  <div class="progress-circle">
+    <svg viewBox="0 0 56 56" width="60" height="60">
+      <circle class="track" cx="28" cy="28" r="26"/>
+      <circle class="fill" id="progressArc" cx="28" cy="28" r="26"/>
+    </svg>
+    <div class="pct" id="pctText">0%</div>
+  </div>
+  <div class="progress-text">
+    <h3 id="progressLabel">Başlamaya hazır!</h3>
+    <p id="progressSub">Bugünkü alışkanlıklarını işaretle</p>
+  </div>
+  <div class="streak-badge">
+    <div class="num" id="streakNum">0</div>
+    <div class="label">Gün Serisi</div>
+  </div>
+</div>
+
+<div class="section-header">
+  <div class="section-title">Bugünkü Alışkanlıklar</div>
+  <button class="edit-btn" id="editBtn" onclick="toggleEditMode()">✏️ Düzenle</button>
+</div>
+
+<div class="habits-grid" id="habitsGrid"></div>
+<button class="add-habit-btn" id="addBtn" onclick="openAddModal()">＋ Yeni Alışkanlık Ekle</button>
+
+<div class="tip-box">
+  <div class="tip-label">💡 Motivasyon İpucu</div>
+  <p id="tipText"></p>
+</div>
+
+<div class="quote-card">
+  <p id="quoteText"></p>
+  <span id="quoteAuthor"></span>
+</div>
+
+<div class="section-title" style="margin-bottom:.8rem">Bu Hafta</div>
+<div class="weekly-grid" id="weeklyGrid"></div>
+<button class="reset-btn" onclick="resetDay()">↺ Bugünü Sıfırla</button>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Alışkanlık Ekle</h3>
+    <label>İkon Seç</label>
+    <div class="emoji-grid" id="emojiGrid"></div>
+    <label>Görev Adı</label>
+    <input type="text" id="modalName" placeholder="Görev adı..." maxlength="40">
+    <label>Açıklama</label>
+    <input type="text" id="modalDesc" placeholder="Kısa açıklama..." maxlength="60">
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal()">İptal</button>
+      <button class="btn-primary" onclick="saveModal()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_HABITS = [
+  {id:'pomodoro4',icon:'🍅',name:'4× Pomodoro Bloğu',desc:'4×25 dk odak + 5 dk mola = ~2 saat',science:'Pomodoro Tekniği — dikkat döngüsünü optimize eder'},
+  {id:'deepwork',icon:'🧠',name:'Derin Çalışma Seansı',desc:'90 dk kesintisiz odak',science:'Ultradian Ritim — beyin 90 dk döngülerle çalışır'},
+  {id:'activerecall',icon:'🎯',name:'Active Recall',desc:'Notlara bakmadan 20 dk hatırlamaya çalış',science:'Testing Effect — pasif okumadan 2× daha etkili'},
+  {id:'spaced',icon:'🔁',name:'Spaced Repetition',desc:'Anki / flashcard ile 20 dk tekrar',science:'Ebbinghaus Unutma Eğrisi — zamanlanmış tekrar şart'},
+  {id:'cornell',icon:'✏️',name:'Cornell Not Sistemi',desc:'Ders notlarını Cornell formatında yaz',science:'Elaborative Encoding — derin işleme belleği güçlendirir'},
+  {id:'interleave',icon:'🔀',name:'Interleaving',desc:'3 farklı konu arasında geçiş yaparak çalış',science:'Interleaving Effect — karışık pratik %43 daha kalıcı'},
+  {id:'noPhone',icon:'📵',name:'Telefonsuz 2 Saat',desc:'Derin odak modunda telefon kapalı',science:'Dikkat bölünmesi odaklanma süresini %40 düşürür'},
+  {id:'plan',icon:'📋',name:'Akşam Planlaması',desc:'Yarın için 3 öncelik + ders programı yaz',science:'Implementation Intention — hedef başarısını 2× artırır'},
+  {id:'sleep',icon:'😴',name:'Uyku Hijyeni',desc:"23:00'de ekran kapat, 7-8 saat uyu",science:'Uyku sırasında hippokampus bilgiyi konsolide eder'},
+];
+
+const EMOJI_OPTS=['🍅','🧠','🎯','🔁','✏️','🔀','📵','📋','😴','📚','💪','🏃','🧘','🥗','💧','📖','🎵','🖥️','✍️','🔬','🌅','🌙','⚡','🏆','🎓','💡','📝','🗂️','⏰','🎧','🏋️','🧩','🌿','☕','🎨','🔑','📌','🚀','⭐','🔥'];
+
+const TIPS=[
+  'Motivasyon her zaman gelmez — ama <strong>rutin her zaman çalışır</strong>. Sadece 2 dakika başla.',
+  '<strong>"Yapma" diye bir şey yok</strong>, sadece "henüz yapmadım" var. Her alışkanlık kazanılabilir.',
+  'Beynin ödül merkezi <strong>küçük başarılara</strong> büyük tepkiler verir. Her tik atmak seni ileriye taşır.',
+  'Bir alışkanlığı kurmak için gereken ortalama süre 66 gün. <strong>Sen zaten başladın.</strong>',
+  'Kötü bir gün olsa bile <strong>bir şeyi yap</strong> — seriyi korumak sıfırdan başlamaktan çok daha güçlüdür.',
+];
+const QUOTES=[
+  {q:'"Başarı, her gün tekrarlanan küçük çabaların toplamıdır."',a:'— Robert Collier'},
+  {q:'"Disiplin, motivasyon yokken bile devam etmektir."',a:'— Bilinmiyor'},
+  {q:'"Bugün zor olan, yarın alışkanlık olur."',a:'— Epiktetos'},
+  {q:'"Öğrenmek bir hazinedir; sahibini her yerde takip eder."',a:'— Çin Atasözü'},
+  {q:'"En iyi yatırım, kendinize yaptığınız yatırımdır."',a:'— Benjamin Franklin'},
+];
+
+// Storage
+const todayKey='habits_'+new Date().toDateString();
+const streakKey='streak_data';
+const habitsKey='custom_habits';
+function loadHabits(){try{const h=JSON.parse(localStorage.getItem(habitsKey));return h&&h.length?h:DEFAULT_HABITS;}catch{return DEFAULT_HABITS;}}
+function saveHabits(){try{localStorage.setItem(habitsKey,JSON.stringify(habits));}catch{}}
+function getState(){try{return JSON.parse(localStorage.getItem(todayKey))||{};}catch{return {};}}
+function saveState(s){try{localStorage.setItem(todayKey,JSON.stringify(s));}catch{}}
+
+let habits=loadHabits(), state=getState(), editMode=false;
+
+// ── Enerjik Ses Motoru ────────────────────────────────────────────
+let audioCtx=null;
+function getAudio(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function note(freq,t,dur,vol,type='square'){
+  const ctx=getAudio(),osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.connect(gain);gain.connect(ctx.destination);
+  osc.type=type;osc.frequency.value=freq;
+  gain.gain.setValueAtTime(0,t);
+  gain.gain.linearRampToValueAtTime(vol,t+0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+dur);
+  osc.start(t);osc.stop(t+dur+0.05);
+}
+
+// Tik sesi: Güçlü 8-bit "DING!" + bass punch
+function playCheckSound(){
+  const ctx=getAudio(),t=ctx.currentTime;
+  // Üç basamaklı parlak arpej
+  note(880,t,      0.10,0.30,'square');
+  note(1108,t+0.07,0.10,0.25,'square');
+  note(1760,t+0.14,0.15,0.35,'square');
+  // Bass thump
+  note(55, t,      0.18,0.4,'sine');
+  note(110,t+0.05, 0.12,0.2,'sine');
+}
+
+// Geri alma: kısa düşen glide
+function playUncheckSound(){
+  const ctx=getAudio(),t=ctx.currentTime;
+  const osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.connect(gain);gain.connect(ctx.destination);
+  osc.type='sawtooth';
+  osc.frequency.setValueAtTime(600,t);
+  osc.frequency.exponentialRampToValueAtTime(150,t+0.2);
+  gain.gain.setValueAtTime(0.15,t);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+  osc.start(t);osc.stop(t+0.25);
+}
+
+// Kutlama: Tam 8-bit zafer müziği + bas ritim
+function playCelebrationSound(){
+  const ctx=getAudio(),t=ctx.currentTime;
+  // Melodi — süper mario bitişi gibi
+  const mel=[
+    [392,0],[392,.12],[392,.24],[311,.38],[392,.48],[494,.58],
+    [587,.76],[494,.92],[587,1.08]
+  ];
+  mel.forEach(([f,dt])=>{
+    note(f,   t+dt,0.15,0.28,'square');
+    note(f*2, t+dt,0.08,0.10,'square');
+  });
+  // Ritim bas
+  [98,123,147,98,123,147,196].forEach((f,i)=>{
+    note(f,t+i*0.15,0.13,0.35,'sine');
+  });
+  // Parlak vurgu en sonda
+  note(1175,t+1.2,0.25,0.3,'square');
+  note(1568,t+1.4,0.3, 0.35,'square');
+}
+
+// Ekleme: kısa yükselen "whoosh"
+function playAddSound(){
+  const ctx=getAudio(),t=ctx.currentTime;
+  note(440,t,    0.07,0.15,'square');
+  note(880,t+.08,0.09,0.2,'square');
+  note(1320,t+.16,0.1,0.18,'square');
+}
+
+// Silme: düşen "boop"
+function playDeleteSound(){
+  const ctx=getAudio(),t=ctx.currentTime;
+  const osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.connect(gain);gain.connect(ctx.destination);
+  osc.type='sawtooth';
+  osc.frequency.setValueAtTime(350,t);
+  osc.frequency.exponentialRampToValueAtTime(70,t+0.28);
+  gain.gain.setValueAtTime(0.18,t);
+  gain.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+  osc.start(t);osc.stop(t+0.32);
+}
+
+// ── Render ────────────────────────────────────────────────────────
+function render(){
+  const grid=document.getElementById('habitsGrid');
+  grid.innerHTML='';
+  const done=Object.values(state).filter(Boolean).length;
+  const total=habits.length;
+  const pct=total===0?0:Math.round((done/total)*100);
+
+  habits.forEach((h,i)=>{
+    const card=document.createElement('div');
+    card.className='habit-card'+(state[h.id]?' done':'')+(editMode?' editing':'');
+    card.style.animationDelay=(i*.06)+'s';
+
+    if(editMode){
+      card.innerHTML=`
+        <div class="habit-icon" onclick="openIconModal(${i})" title="İkona tıkla: değiştir">${h.icon}</div>
+        <div class="habit-info">
+          <input class="habit-field name-f" value="${escHtml(h.name)}" placeholder="Görev adı"
+            onchange="updateField(${i},'name',this.value)" onclick="event.stopPropagation()">
+          <input class="habit-field desc-f" value="${escHtml(h.desc)}" placeholder="Açıklama"
+            onchange="updateField(${i},'desc',this.value)" onclick="event.stopPropagation()">
+        </div>
+        <div class="del-btn" onclick="deleteHabit(${i})">✕</div>
+      `;
+    } else {
+      card.innerHTML=`
+        <div class="habit-icon">${h.icon}</div>
+        <div class="habit-info">
+          <div class="habit-name">${escHtml(h.name)}</div>
+          <div class="habit-desc">${escHtml(h.desc)}</div>
+          <div class="habit-science">🔬 ${escHtml(h.science||'')}</div>
+        </div>
+        <div class="habit-check">${state[h.id]?'✓':''}</div>
+      `;
+      card.addEventListener('click',()=>toggle(h.id));
+    }
+    grid.appendChild(card);
+  });
+
+  document.getElementById('addBtn').style.display=editMode?'flex':'none';
+  document.getElementById('progressArc').style.strokeDashoffset=163-(pct/100)*163;
+  document.getElementById('pctText').textContent=pct+'%';
+  const labels=['Başlamaya hazır!','Harika başlangıç!','İyi gidiyorsun!','Yarı yoldasın!','Neredeyse bitti!','Mükemmel gün! 🏆'];
+  const idx=done===0?0:done===total?5:Math.min(Math.ceil((done/total)*4),4);
+  document.getElementById('progressLabel').textContent=labels[idx];
+  document.getElementById('progressSub').textContent=
+    done===0?'Bugünkü alışkanlıklarını işaretle':
+    done===total?'Tüm alışkanlıklar tamamlandı!':
+    done+' / '+total+' tamamlandı';
+}
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function toggle(id){
+  const was=state[id];
+  state[id]=!state[id];
+  saveState(state);
+  state[id]?playCheckSound():playUncheckSound();
+  const done=Object.values(state).filter(Boolean).length;
+  if(done===habits.length&&!was){setTimeout(playCelebrationSound,150);celebrate();}
+  render();updateStreak();
+}
+
+function celebrate(){
+  const c=document.getElementById('confetti');
+  c.classList.remove('show');void c.offsetWidth;c.classList.add('show');
+}
+
+function updateStreak(){
+  const done=Object.values(state).filter(Boolean).length;let streak=0;
+  try{
+    const d=JSON.parse(localStorage.getItem(streakKey))||{};
+    if(done===habits.length) d[new Date().toDateString()]=true;
+    localStorage.setItem(streakKey,JSON.stringify(d));
+    let day=new Date();
+    while(d[day.toDateString()]){streak++;day.setDate(day.getDate()-1);}
+  }catch{}
+  document.getElementById('streakNum').textContent=streak;
+}
+
+function resetDay(){state={};saveState(state);render();}
+
+// Edit mode
+function toggleEditMode(){
+  editMode=!editMode;
+  const btn=document.getElementById('editBtn');
+  btn.textContent=editMode?'✅ Bitti':'✏️ Düzenle';
+  btn.classList.toggle('on',editMode);
+  render();
+}
+
+function updateField(idx,field,val){habits[idx][field]=val;saveHabits();}
+
+function deleteHabit(idx){
+  playDeleteSound();
+  habits.splice(idx,1);
+  saveHabits();render();
+}
+
+// Modal
+let modalMode='add',modalIdx=-1,selectedEmoji='📌';
+
+function buildEmojiGrid(sel){
+  const grid=document.getElementById('emojiGrid');
+  grid.innerHTML='';
+  EMOJI_OPTS.forEach(e=>{
+    const d=document.createElement('div');
+    d.className='emoji-opt'+(e===sel?' sel':'');
+    d.textContent=e;
+    d.onclick=()=>{
+      selectedEmoji=e;
+      document.querySelectorAll('.emoji-opt').forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel');
+    };
+    grid.appendChild(d);
+  });
+}
+
+function openAddModal(){
+  modalMode='add';modalIdx=-1;selectedEmoji='📌';
+  document.getElementById('modalTitle').textContent='Yeni Alışkanlık';
+  document.getElementById('modalName').value='';
+  document.getElementById('modalDesc').value='';
+  buildEmojiGrid(selectedEmoji);
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function openIconModal(idx){
+  modalMode='icon';modalIdx=idx;selectedEmoji=habits[idx].icon;
+  document.getElementById('modalTitle').textContent='Alışkanlığı Düzenle';
+  document.getElementById('modalName').value=habits[idx].name;
+  document.getElementById('modalDesc').value=habits[idx].desc;
+  buildEmojiGrid(selectedEmoji);
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal(){document.getElementById('modalOverlay').classList.remove('show');}
+
+function saveModal(){
+  const name=document.getElementById('modalName').value.trim();
+  const desc=document.getElementById('modalDesc').value.trim();
+  if(!name)return;
+  if(modalMode==='add'){
+    habits.push({id:'habit_'+Date.now(),icon:selectedEmoji,name,desc,science:''});
+    playAddSound();
+  } else {
+    habits[modalIdx].icon=selectedEmoji;
+    habits[modalIdx].name=name;
+    habits[modalIdx].desc=desc;
+  }
+  saveHabits();closeModal();render();
+}
+
+document.getElementById('modalOverlay').addEventListener('click',e=>{
+  if(e.target===e.currentTarget)closeModal();
+});
+
+function buildWeekly(){
+  const grid=document.getElementById('weeklyGrid');
+  const days=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  const today=new Date().getDay();
+  const todayIdx=today===0?6:today-1;
+  let sd={};try{sd=JSON.parse(localStorage.getItem(streakKey))||{};}catch{}
+  for(let i=0;i<7;i++){
+    const d=new Date();d.setDate(d.getDate()-todayIdx+i);
+    const div=document.createElement('div');
+    div.className='week-day'+(i===todayIdx?' active':'')+(i<todayIdx&&sd[d.toDateString()]?' past':'');
+    div.innerHTML=`<span class="wlabel">${days[i]}</span><div class="wdot"></div>`;
+    grid.appendChild(div);
+  }
+}
+
+// Init
+document.getElementById('dateStr').textContent=
+  new Date().toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});
+const q=QUOTES[Math.floor(Math.random()*QUOTES.length)];
+document.getElementById('quoteText').textContent=q.q;
+document.getElementById('quoteAuthor').textContent=q.a;
+document.getElementById('tipText').innerHTML=TIPS[Math.floor(Math.random()*TIPS.length)];
+render();updateStreak();buildWeekly();
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
